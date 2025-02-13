@@ -125,22 +125,17 @@ def generate_image():
             json={
                 "model": model_id,
                 "prompt": prompt,
-                "width": 1024,
-                "height": 1024,
-                "steps": 30,
-                "hide_watermark": False,
-                "return_binary": True,
-                "seed": 123,
-                "cfg_scale": 123,
-                "style_preset": "None",
-                "negative_prompt": "",
-                "safe_mode": False
+                "n": 1,
+                "size": "1024x1024",
+                "response_format": "b64_json"
             }
         )
         image_response.raise_for_status()
-        image_data = image_response.content
-        encoded_image = base64.b64encode(image_data).decode('utf-8')
-        return jsonify({"images": [encoded_image]})
+        response_data = image_response.json()
+        if 'data' in response_data and len(response_data['data']) > 0:
+            return jsonify({"images": [response_data['data'][0]['b64_json']]})
+        else:
+            return jsonify({"error": "No image data in response"}), 500
     except requests.RequestException as e:
         error_message = f"Error generating image: {str(e)}, Status Code: {e.response.status_code}, Response: {e.response.text}"
         logger.error(error_message)  # Log the error details
