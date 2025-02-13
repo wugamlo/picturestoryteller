@@ -39,7 +39,14 @@ document.getElementById('send-button').addEventListener('click', async () => {
                         try {
                             const data = JSON.parse(line.slice(6));
                             if (data.content) {
-                                outputDiv.innerHTML += `<div>Bot: ${data.content}</div>`;
+                                let botDiv = outputDiv.querySelector('.bot-response:last-child');
+                                if (!botDiv) {
+                                    botDiv = document.createElement('div');
+                                    botDiv.className = 'bot-response';
+                                    botDiv.textContent = 'Bot: ';
+                                    outputDiv.appendChild(botDiv);
+                                }
+                                botDiv.textContent += data.content;
                             }
                             if (data.error) {
                                 outputDiv.innerHTML += `<div class="error">Error: ${data.error}</div>`;
