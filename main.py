@@ -117,7 +117,7 @@ def generate_image():
     model_id = data.get('model', 'flux-dev')  # Specify the default model ID
     try:
         image_response = requests.post(
-            f"{VENICE_API_BASE}/image/generate",
+            f"{VENICE_API_BASE}/image/completions",
             headers={
                 "Authorization": f"Bearer {VENICE_API_KEY}",
                 "Content-Type": "application/json"

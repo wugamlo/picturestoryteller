@@ -95,7 +95,7 @@ document.getElementById('generate-image-button').addEventListener('click', async
                 },
                 body: JSON.stringify({ 
                     prompt: prompt,
-                    model: 'default-image-model' 
+                    model: 'stable-diffusion-3.5' 
                 })
             });
 
