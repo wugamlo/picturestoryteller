@@ -140,12 +140,10 @@ def generate_image():
         image_response.raise_for_status()
         content_type = image_response.headers.get('content-type', '')
         
-        if 'application/json' in content_type:
-            response_data = image_response.json()
-            if response_data.get('images') and len(response_data['images']) > 0:
-                return jsonify({"images": [response_data['images'][0]]})
-            else:
-                return jsonify({"error": "No image data in response"}), 500
+        if 'image/png' in content_type:
+            image_data = image_response.content
+            encoded_image = base64.b64encode(image_data).decode('utf-8')
+            return jsonify({"images": [encoded_image]})
         else:
             return jsonify({"error": f"Unexpected response type: {content_type}"}), 500
     except requests.RequestException as e:
