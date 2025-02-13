@@ -100,8 +100,8 @@ document.getElementById('generate-image-button').addEventListener('click', async
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`HTTP error! status: ${response.status}. ${errorData.error || ''}`);
+                const errorData = await response.json().catch(() => ({ error: 'Invalid response format' }));
+                throw new Error(`HTTP error! status: ${response.status}. ${errorData.error || 'Unknown error'}`);
             }
 
             const data = await response.json();

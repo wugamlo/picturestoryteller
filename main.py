@@ -138,14 +138,19 @@ def generate_image():
             }
         )
         image_response.raise_for_status()
-        response_data = image_response.json()
-        if 'data' in response_data and len(response_data['data']) > 0:
-            return jsonify({"images": [response_data['data'][0]['b64_json']]})
+        content_type = image_response.headers.get('content-type', '')
+        
+        if 'application/json' in content_type:
+            response_data = image_response.json()
+            if response_data.get('images') and len(response_data['images']) > 0:
+                return jsonify({"images": [response_data['images'][0]]})
+            else:
+                return jsonify({"error": "No image data in response"}), 500
         else:
-            return jsonify({"error": "No image data in response"}), 500
+            return jsonify({"error": f"Unexpected response type: {content_type}"}), 500
     except requests.RequestException as e:
-        error_message = f"Error generating image: {str(e)}, Status Code: {e.response.status_code}, Response: {e.response.text}"
-        logger.error(error_message)  # Log the error details
+        error_message = f"Error generating image: {str(e)}"
+        logger.error(f"Full error response: {e.response.text if hasattr(e, 'response') else 'No response'}")
         return jsonify({"error": error_message}), 500
 
 if __name__ == '__main__':
