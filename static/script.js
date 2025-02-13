@@ -1,15 +1,14 @@
-
 document.getElementById('send-button').addEventListener('click', async () => {
     const input = document.getElementById('user-input');
     const message = input.value.trim();
 
     if (message) {
         const outputDiv = document.getElementById('output');
-        
+
         // Initialize or get existing chat history
         window.chatHistory = window.chatHistory || [];
         window.chatHistory.push({ role: 'user', content: message });
-        
+
         outputDiv.innerHTML += `<div>User: ${message}</div>`;
         input.value = '';
 
@@ -35,10 +34,10 @@ document.getElementById('send-button').addEventListener('click', async () => {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                
+
                 const text = decoder.decode(value, { stream: true });
                 const lines = text.split('\n');
-                
+
                 for (const line of lines) {
                     if (line.startsWith('data: ') && line.length > 6) {
                         try {
@@ -71,6 +70,46 @@ document.getElementById('send-button').addEventListener('click', async () => {
             if (window.tempBotResponse) {
                 window.chatHistory.push({ role: 'assistant', content: window.tempBotResponse });
                 window.tempBotResponse = '';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            outputDiv.innerHTML += `<div class="error">Error: ${error.message}</div>`;
+        }
+    }
+});
+
+document.getElementById('generate-image-button').addEventListener('click', async () => {
+    const promptInput = document.getElementById('image-prompt-input');
+    const prompt = promptInput.value.trim();
+
+    if (prompt) {
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML += `<div>User (Image): ${prompt}</div>`;
+        promptInput.value = '';
+
+        try {
+            const response = await fetch('/generate-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    prompt: prompt,
+                    model: 'default-image-model' 
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.images) {
+                data.images.forEach(image => {
+                    outputDiv.innerHTML += `<img src="data:image/jpeg;base64,${image}" alt="Generated Image" style="max-width: 100%; height: auto;">`;
+                });
+            } else {
+                outputDiv.innerHTML += `<div>No images generated.</div>`;
             }
         } catch (error) {
             console.error('Error:', error);

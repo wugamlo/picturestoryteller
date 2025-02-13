@@ -4,6 +4,7 @@ import requests
 import json
 import time
 import logging
+import base64
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-123')
@@ -104,11 +105,46 @@ def chat():
 
 @app.after_request
 def after_request(response):
-    """Enable CORS and headers"""
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'POST')
     return response
+
+@app.route('/generate-image', methods=['POST'])
+def generate_image():
+    data = request.get_json()
+    prompt = data.get('prompt', '')
+    model_id = data.get('model', 'flux-dev')  # Specify the default model ID
+    try:
+        image_response = requests.post(
+            f"{VENICE_API_BASE}/image/generate",
+            headers={
+                "Authorization": f"Bearer {VENICE_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": model_id,
+                "prompt": prompt,
+                "width": 1024,
+                "height": 1024,
+                "steps": 30,
+                "hide_watermark": False,
+                "return_binary": True,
+                "seed": 123,
+                "cfg_scale": 7.0,
+                "style_preset": "3D Model",
+                "negative_prompt": "",
+                "safe_mode": False
+            }
+        )
+        image_response.raise_for_status()
+        image_data = image_response.content
+        encoded_image = base64.b64encode(image_data).decode('utf-8')
+        return jsonify({"images": [encoded_image]})
+    except requests.RequestException as e:
+        error_message = f"Error generating image: {str(e)}, Status Code: {e.response.status_code}, Response: {e.response.text}"
+        logger.error(error_message)  # Log the error details
+        return jsonify({"error": error_message}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)
