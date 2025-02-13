@@ -131,8 +131,8 @@ def generate_image():
                 "hide_watermark": False,
                 "return_binary": True,
                 "seed": 123,
-                "cfg_scale": 7.0,
-                "style_preset": "3D Model",
+                "cfg_scale": 123,
+                "style_preset": "None",
                 "negative_prompt": "",
                 "safe_mode": False
             }
