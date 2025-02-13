@@ -132,7 +132,7 @@ def generate_image():
                 "return_binary": True,
                 "seed": 123,
                 "cfg_scale": 7,
-                "style_preset": "None",
+                "style_preset": "Pixel Art",
                 "negative_prompt": "",
                 "safe_mode": False
             }
