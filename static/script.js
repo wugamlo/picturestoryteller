@@ -100,7 +100,8 @@ document.getElementById('generate-image-button').addEventListener('click', async
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}. ${errorData.error || ''}`);
             }
 
             const data = await response.json();
