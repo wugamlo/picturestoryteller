@@ -5,6 +5,11 @@ document.getElementById('send-button').addEventListener('click', async () => {
 
     if (message) {
         const outputDiv = document.getElementById('output');
+        
+        // Initialize or get existing chat history
+        window.chatHistory = window.chatHistory || [];
+        window.chatHistory.push({ role: 'user', content: message });
+        
         outputDiv.innerHTML += `<div>User: ${message}</div>`;
         input.value = '';
 
@@ -15,7 +20,7 @@ document.getElementById('send-button').addEventListener('click', async () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ 
-                    messages: [{ role: 'user', content: message }], 
+                    messages: window.chatHistory,
                     model: 'llama-3.3-70b' 
                 })
             });
@@ -47,6 +52,11 @@ document.getElementById('send-button').addEventListener('click', async () => {
                                     outputDiv.appendChild(botDiv);
                                 }
                                 botDiv.textContent += data.content;
+                                // Store complete bot response
+                                if (!window.tempBotResponse) {
+                                    window.tempBotResponse = '';
+                                }
+                                window.tempBotResponse += data.content;
                             }
                             if (data.error) {
                                 outputDiv.innerHTML += `<div class="error">Error: ${data.error}</div>`;
@@ -56,6 +66,11 @@ document.getElementById('send-button').addEventListener('click', async () => {
                         }
                     }
                 }
+            }
+            // Add complete bot response to history
+            if (window.tempBotResponse) {
+                window.chatHistory.push({ role: 'assistant', content: window.tempBotResponse });
+                window.tempBotResponse = '';
             }
         } catch (error) {
             console.error('Error:', error);
