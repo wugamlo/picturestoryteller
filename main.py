@@ -60,7 +60,6 @@ def generate_chat_response(messages, model_id):
         session.verify = False
         response = session.post(
             f"{VENICE_API_BASE}/chat/completions",
-            timeout=30,
             headers={
                 "Authorization": f"Bearer {VENICE_API_KEY}",
                 "Content-Type": "application/json"
@@ -68,32 +67,23 @@ def generate_chat_response(messages, model_id):
             json={
                 "model": model_id,
                 "messages": messages,
-                "stream": True,  # Enable streaming
-                "max_tokens": 4000,
-                "venice_parameters": {
-                    "include_venice_system_prompt": False
-                }
+                "stream": True,
+                "max_tokens": 4000
             },
             stream=True
         )
         response.raise_for_status()
         for line in response.iter_lines():
-            if line:
-                decoded_line = line.decode('utf-8')
-                if decoded_line.startswith('data: '):
-                    try:
-                        data = json.loads(decoded_line[6:])
-                        if 'choices' in data and data['choices']:
-                            content = data['choices'][0].get('delta', {}).get('content')
-                            if content:
-                                yield f"data: {json.dumps({'content': content})}\n\n"
-                        elif 'error' in data:
-                            yield f"data: {json.dumps({'error': data['error']})}\n\n"
-                    except json.JSONDecodeError:
-                        logger.error(f"Failed to parse line: {decoded_line}")
-                time.sleep(0.02)
+            if line and (decoded_line := line.decode('utf-8')).startswith('data: '):
+                try:
+                    data = json.loads(decoded_line[6:])
+                    if 'choices' in data and data['choices']:
+                        content = data['choices'][0].get('delta', {}).get('content')
+                        if content:
+                            yield f"data: {json.dumps({'content': content})}\n\n"
+                except json.JSONDecodeError:
+                    pass
     except Exception as e:
-        logger.error(f"Error generating response: {e}")
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
 @app.route('/')
@@ -109,21 +99,8 @@ def get_models():
 def chat():
     data = request.get_json()
     messages = data.get('messages', [])
-    model_id = data.get('model', '')
-
-    logger.debug(f"Starting chat with model {model_id}")
-
-    def event_stream():
-        try:
-            for chunk in generate_chat_response(messages, model_id):
-                yield chunk
-        except Exception as e:
-            logger.error(f"Stream error: {e}")
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        finally:
-            yield 'event: done\ndata: {}\n\n'
-
-    return Response(event_stream(), mimetype='text/event-stream')
+    model_id = data.get('model', 'llama-3.3-70b')
+    return Response(generate_chat_response(messages, model_id), mimetype='text/event-stream')
 
 @app.after_request
 def after_request(response):
