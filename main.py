@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, session
 import os
 import requests
 import json
-import time
 import logging
 import base64
+import re
+from flask import session as flask_session
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-123')
@@ -13,53 +14,13 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-123')
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Venice API configuration
-VENICE_API_KEY = os.environ.get("VENICE_API_KEY")
+# Venice AI API configuration
+VENICE_API_KEY = os.environ.get("VENICE_API_KEY", "your_venice_api_key_here")
 VENICE_API_BASE = "https://api.venice.ai/api/v1"
 
-def get_available_models():
+def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max_tokens=4000):
     try:
-        logger.debug(f"Fetching models with key: {'*' * 4}{VENICE_API_KEY[-4:] if VENICE_API_KEY else 'None'}")
-
-        session = requests.Session()
-        session.verify = False
-
-        headers = {
-            "Authorization": f"Bearer {VENICE_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        response = session.get(
-            f"{VENICE_API_BASE}/models",
-            headers=headers
-        )
-
-        if response.status_code == 401:
-            logger.error("Authentication failed. Check your API key.")
-            return []
-        if response.status_code == 404:
-            logger.error("API endpoint not found.")
-            return []
-
-        response.raise_for_status()
-
-        models_response = response.json()
-        models = models_response.get('data', [])
-
-        return [{
-            'id': model['id'],
-            'traits': ', '.join(model.get('model_spec', {}).get('traits', ['No traits available']))
-        } for model in models if model['type'] == 'text']
-
-    except Exception as e:
-        logger.error(f"Error fetching models: {str(e)}")
-        return []
-
-def generate_chat_response(messages, model_id):
-    try:
-        session = requests.Session()
-        session.verify = False
-        response = session.post(
+        response = requests.post(
             f"{VENICE_API_BASE}/chat/completions",
             headers={
                 "Authorization": f"Bearer {VENICE_API_KEY}",
@@ -68,55 +29,23 @@ def generate_chat_response(messages, model_id):
             json={
                 "model": model_id,
                 "messages": messages,
-                "stream": True,
-                "max_tokens": 4000
+                "max_tokens": max_tokens
             },
-            stream=True
+            timeout=30
         )
         response.raise_for_status()
-        for line in response.iter_lines():
-            if line and (decoded_line := line.decode('utf-8')).startswith('data: '):
-                try:
-                    data = json.loads(decoded_line[6:])
-                    if 'choices' in data and data['choices']:
-                        content = data['choices'][0].get('delta', {}).get('content')
-                        if content:
-                            yield f"data: {json.dumps({'content': content})}\n\n"
-                except json.JSONDecodeError:
-                    pass
+        data = response.json()
+        if data.get("choices"):
+            return data["choices"][0]["message"]["content"].strip()
+        else:
+            return "No content generated"
     except Exception as e:
-        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        logger.error(f"Failed to generate response: {e}")
+        return f"Error: {str(e)}"
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/models')
-def get_models():
-    models = get_available_models()
-    return jsonify(models)
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    data = request.get_json()
-    messages = data.get('messages', [])
-    model_id = data.get('model', 'llama-3.3-70b')
-    return Response(generate_chat_response(messages, model_id), mimetype='text/event-stream')
-
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST')
-    return response
-
-@app.route('/generate-image', methods=['POST'])
-def generate_image():
-    data = request.get_json()
-    prompt = data.get('prompt', '')
-    model_id = data.get('model', 'flux-dev')  # Specify the default model ID
+def generate_image(prompt, model_id="fluently-xl"):
     try:
-        image_response = requests.post(
+        response = requests.post(
             f"{VENICE_API_BASE}/image/generate",
             headers={
                 "Authorization": f"Bearer {VENICE_API_KEY}",
@@ -125,31 +54,91 @@ def generate_image():
             json={
                 "model": model_id,
                 "prompt": prompt,
-                "width": 1024,
-                "height": 1024,
+                "width": 512,
+                "height": 512,
                 "steps": 30,
-                "hide_watermark": False,
-                "return_binary": True,
-                "seed": 123,
-                "cfg_scale": 7,
-                "style_preset": "Pixel Art",
-                "negative_prompt": "",
-                "safe_mode": False
-            }
+                "hide_watermark": True,
+                "return_binary": True
+            },
+            timeout=45
         )
-        image_response.raise_for_status()
-        content_type = image_response.headers.get('content-type', '')
-        
-        if 'image/png' in content_type:
-            image_data = image_response.content
-            encoded_image = base64.b64encode(image_data).decode('utf-8')
-            return jsonify({"images": [encoded_image]})
+        response.raise_for_status()
+        if 'image/png' in response.headers.get('content-type', ''):
+            encoded_image = base64.b64encode(response.content).decode('utf-8')
+            return {"images": [encoded_image]}
         else:
-            return jsonify({"error": f"Unexpected response type: {content_type}"}), 500
-    except requests.RequestException as e:
-        error_message = f"Error generating image: {str(e)}"
-        logger.error(f"Full error response: {e.response.text if hasattr(e, 'response') else 'No response'}")
-        return jsonify({"error": error_message}), 500
+            return {"error": "Unexpected response type"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/start-story', methods=['POST'])
+def start_story():
+    data = request.get_json()
+    prompt = data.get('prompt', '').strip()
+    num_chapters = data.get('num_chapters', 1)
+    if not prompt:
+        return jsonify({"error": "No story prompt provided"}), 400
+    # Generate the full story with specified chapters
+    initial_prompt = (
+        f"Compose a story based on: '{prompt}' divided into exactly {num_chapters} chapters. "
+        "Each chapter MUST start with 'CHAPTER X:' where X is the chapter number in Roman numerals, "
+        "followed by a colon and space. The content of each chapter should be concise and end with a cliffhanger or conclusion. "
+        "Avoid combining chapters or exceeding the requested count."
+    )
+    max_tokens = num_chapters * 800  
+    full_story = generate_chat_response_non_streaming(
+        messages=[{"role": "user", "content": initial_prompt}],
+        max_tokens=max_tokens
+    )
+    # Validate story generation
+    if not full_story or "Error:" in full_story or "No content generated" in full_story:
+        return jsonify({"error": "Failed to generate story"}), 500
+    # Split chapters using regex
+    split_result = re.split(r'(CHAPTER\s+[IVXLCDM]+):\s*', full_story)
+    chapters = []
+    for i in range(1, len(split_result), 2):
+        if i + 1 < len(split_result):
+            header = split_result[i]
+            content = split_result[i + 1].strip()
+            chapters.append(f"{header}: {content}")
+    chapters = chapters[:num_chapters]  # Truncate to requested chapters
+    # Ensure the correct number of chapters
+    if len(chapters) < num_chapters:
+        return jsonify({"error": "Generated story does not meet chapter count requirements"}), 400
+    # Store chapters in session
+    flask_session['chapters'] = chapters
+    flask_session['current_chapter'] = 0  # Start with 0-based index
+    return jsonify({"status": "Story generated successfully", "full_story": full_story})
+
+@app.route('/continue-story', methods=['POST'])
+def continue_story():
+    chapters = flask_session.get('chapters', [])
+    current_chapter_idx = flask_session.get('current_chapter', 0)
+
+    if current_chapter_idx >= len(chapters) or not chapters:
+        return jsonify({"error": "No more chapters available"}), 400
+
+    # Get the next chapter
+    chapter = chapters[current_chapter_idx]
+    chapter_number = current_chapter_idx + 1
+
+    # Generate image for the chapter
+    image_data = generate_image(chapter)
+    image_url = image_data.get('images', [None])[0]
+
+    # Update current chapter index
+    flask_session['current_chapter'] = current_chapter_idx + 1
+
+    return jsonify({
+        "chapter": chapter_number,
+        "content": chapter,
+        "image": image_url,
+        "is_last": current_chapter_idx + 1 >= len(chapters)
+    })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=True)

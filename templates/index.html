@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Chatbot</title>
+    <title>Consistent Picture Story Generator</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="chat-container">
-        <h1>Simple Chatbot</h1>
+        <h1>Consistent Picture Story Generator</h1>
         <div class="output" id="output"></div>
 
-        <textarea id="user-input" placeholder="Type your message here..."></textarea>
-        <button id="send-button">Send</button>
-
-        <textarea id="image-prompt-input" placeholder="Enter image description..."></textarea>
-        <button id="generate-image-button">Generate Image</button>
+        <!-- New div for displaying the full story -->
+        <div id="full-story" style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;"></div>
+        <div class="input-section">
+            <textarea id="story-prompt" placeholder="Enter your story idea..."></textarea>
+            <input type="number" id="chapters" min="1" placeholder="Number of chapters" value="3">
+            <button id="create-story">Create Story</button>
+        </div>
     </div>
-
     <script type="module" src="/static/script.js"></script>
 </body>
 </html>
