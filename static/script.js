@@ -41,34 +41,48 @@ async function fetchChapter() {
         const data = await response.json();
 
         if (response.ok) {
+            // Remove existing next chapter button if present
+            const existingBtn = document.getElementById('next-chapter-btn');
+            if (existingBtn) {
+                existingBtn.remove();
+            }
+
             const chapterParts = data.content.split(':');
             const header = chapterParts[0];
             const content = chapterParts.slice(1).join(':').trim();
 
-            document.getElementById('output').innerHTML += `
-                <div class="chapter">
-                    <h3>${header}</h3>
-                    ${data.image ? `<img src="data:image/png;base64,${data.image}" style="max-width:100%;">` : ''}
-                    <p>${content}</p>
-                </div>
+            const chapterDiv = document.createElement('div');
+            chapterDiv.className = 'chapter';
+            chapterDiv.innerHTML = `
+                <h3>${header}</h3>
+                ${data.image ? `<img src="data:image/png;base64,${data.image}" style="max-width:100%;">` : ''}
+                <p>${content}</p>
             `;
+            document.getElementById('output').appendChild(chapterDiv);
 
             if (!data.is_last) {
-                document.getElementById('output').innerHTML += `
-                    <button id="next-chapter-btn" style="margin-top:20px;">Next Chapter</button>
-                `;
-                document.getElementById('next-chapter-btn').addEventListener('click', fetchChapter);
+                const nextButton = document.createElement('button');
+                nextButton.id = 'next-chapter-btn';
+                nextButton.style.marginTop = '20px';
+                nextButton.textContent = 'Next Chapter';
+                nextButton.onclick = fetchChapter;
+                document.getElementById('output').appendChild(nextButton);
             } else {
-                document.getElementById('output').innerHTML += '<div class="end-message">The End.</div>';
+                const endMessage = document.createElement('div');
+                endMessage.className = 'end-message';
+                endMessage.textContent = 'The End.';
+                document.getElementById('output').appendChild(endMessage);
             }
         } else {
-            document.getElementById('output').innerHTML += `
-                <div class="error">Error: ${data.error}</div>
-            `;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = `Error: ${data.error}`;
+            document.getElementById('output').appendChild(errorDiv);
         }
     } catch (error) {
-        document.getElementById('output').innerHTML += `
-            <div class="error">Failed to load chapter: ${error.message}</div>
-        `;
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = `Failed to load chapter: ${error.message}`;
+        document.getElementById('output').appendChild(errorDiv);
     }
 }
