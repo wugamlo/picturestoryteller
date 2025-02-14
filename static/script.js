@@ -19,17 +19,23 @@ document.getElementById('create-story').addEventListener('click', async () => {
 
     const data = await response.json();
     if (response.ok) {
-        document.getElementById('output').innerHTML = `
-            <div class="story-status">
-                <div>Story generated! Click to start reading.</div>
-                <button id="continue-btn">Start Reading</button>
-            </div>
+        // Remove the Create Story button
+        document.getElementById('create-story').remove();
+
+        // Show Start Reading button
+        const storyStatusDiv = document.getElementById('story-status');
+        storyStatusDiv.innerHTML = `
+            <button id="start-reading">Start Reading</button>
         `;
 
         // Display the entire story
         document.getElementById('full-story').innerText = data.full_story || "The story was not returned.";
 
-        document.getElementById('continue-btn').addEventListener('click', fetchChapter);
+        document.getElementById('start-reading').addEventListener('click', () => {
+            fetchChapter();
+            // Remove the Start Reading button after click
+            document.getElementById('start-reading').remove();
+        });
     } else {
         document.getElementById('output').innerHTML = `<div class="error">Error: ${data.error}</div>`;
     }
@@ -41,7 +47,7 @@ async function fetchChapter() {
         const data = await response.json();
 
         if (response.ok) {
-            // Remove existing next chapter button if present
+            // Remove existing Next Chapter button if present
             const existingBtn = document.getElementById('next-chapter-btn');
             if (existingBtn) {
                 existingBtn.remove();
@@ -55,18 +61,25 @@ async function fetchChapter() {
             chapterDiv.className = 'chapter';
             chapterDiv.innerHTML = `
                 <h3>${header}</h3>
-                ${data.image ? `<img src="data:image/png;base64,${data.image}" style="max-width:100%;">` : ''}
+                ${data.image ? `<div class="image-container"><img src="data:image/png;base64,${data.image}" class="centered-image" /></div>` : ''}
                 <p>${content}</p>
             `;
             document.getElementById('output').appendChild(chapterDiv);
 
+            // Scroll to the bottom of the output area
+            const outputDiv = document.getElementById('output');
+            outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to the end
+
+            // Create the Next Chapter button at the same position
             if (!data.is_last) {
                 const nextButton = document.createElement('button');
                 nextButton.id = 'next-chapter-btn';
                 nextButton.style.marginTop = '20px';
                 nextButton.textContent = 'Next Chapter';
                 nextButton.onclick = fetchChapter;
-                document.getElementById('output').appendChild(nextButton);
+
+                // Position it in the same place as the Start Reading button
+                document.getElementById('story-status').appendChild(nextButton);
             } else {
                 const endMessage = document.createElement('div');
                 endMessage.className = 'end-message';

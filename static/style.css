@@ -1,6 +1,7 @@
 body {
   font-family: 'Arial', sans-serif;
-  background-color: #f3f3f3;
+  background-color: #2e2e2e; /* Dark background */
+  color: #f0f0f0; /* Light text color */
   margin: 0;
   padding: 20px;
 }
@@ -8,31 +9,32 @@ body {
 .chat-container {
   max-width: 600px;
   margin: auto;
-  background: white;
+  background: #3c3c3c;  /* Darker container background */
   padding: 30px;
   border-radius: 15px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .output {
-  max-height: 600px;
+  max-height: 700px;
   overflow-y: auto;
-  padding: 20px;
-  border: 2px solid #e0e0e0;
+  padding: 10px;
+  border: 2px solid #606060; /* Dark border color */
   border-radius: 12px;
-  margin-bottom: 20px;
-  background-color: #f8f8f8;
+  margin-bottom: 10px;
+  background-color: #454545; /* Darker output area */
 }
 
 textarea {
   width: calc(100% - 22px);
-  height: 120px;
+  height: 60px;
   padding: 10px;
   margin-top: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #888; /* Light border for textarea */
   border-radius: 5px;
   font-size: 1rem;
-  resize: none;
+  background-color: #2e2e2e; /* Dark background for textarea */
+  color: #f0f0f0; /* Light text for textarea */
 }
 
 button {
@@ -40,8 +42,8 @@ button {
   outline: none;
   border: none;
   cursor: pointer;
-  padding: 12px 24px;
-  font-size: 1rem;
+  padding: 8px 16px; /* Adjusted padding for smaller button */
+  font-size: 0.9rem;  /* Smaller font size for button text */
   background-color: #4CAF50;
   color: white;
   border-radius: 5px;
@@ -54,23 +56,24 @@ button:hover {
 }
 
 .chapter {
-  padding: 20px;
+  padding: 10px;
   border-radius: 12px;
-  background-color: #f0f8ff;
-  margin-top: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: #383838; /* Dark chapter background */
+  margin-top: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .chapter h3 {
-  color: #0056b3;
-  border-bottom: 1px solid #d3e6f5;
+  color: #91c9ff; /* Soft blue for chapter titles */
+  border-bottom: 1px solid #606060; /* Dark border for titles */
   padding-bottom: 5px;
   margin-bottom: 10px;
 }
 
 .chapter p {
-  line-height: 1.6;
-  color: #333;
+  line-height: 1.4;
+  color: #f0f0f0; /* Light text color */
+  font-size: 0.9rem; /* Smaller font size for chapter text */
 }
 
 .end-message {
@@ -91,10 +94,40 @@ button:hover {
 }
 
 img {
-  max-width: 100%;
+  max-width: 30%;
   height: auto;
   border-radius: 8px;
   margin-top: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.image-container {
+  text-align: center; /* Center align */
+}
+.centered-image {
+  max-width: 50%; /* Change this percentage as needed to control image size */
+  height: auto; /* Maintain aspect ratio */
+}
+
+.input-section {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Stretch elements */
+}
+.reset-button {
+  align-self: flex-end; /* Move the reset button to the right */
+  margin-top: 10px; /* Maintain spacing */
+}
+
+.flex-container {
+    display: flex;
+    justify-content: space-between; /* Distribute space between items */
+    align-items: center; /* Center items vertically */
+    margin: 10px 0; /* Add space above and below each flex container */
+    width: 100%; /* Full width for alignment */
+}
+
+#chapters {
+    width: 40px; /* Set a fixed width for the chapter input */
 }
