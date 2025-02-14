@@ -133,20 +133,19 @@ def continue_story():
     chapter = chapters[current_chapter_idx]
     chapter_number = current_chapter_idx + 1
 
-    # Generate image for current chapter
-    image_data = generate_image(chapter)
-    current_image = image_data.get('images', [None])[0]
-    
-    # Try to generate next chapter's image in background, but don't wait for it
+    # Get the current chapter's image from session or generate it
+    current_image = flask_session.get(f'chapter_image_{current_chapter_idx}')
+    if not current_image:
+        image_data = generate_image(chapter)
+        current_image = image_data.get('images', [None])[0]
+
+    # Generate image for next chapter if it exists
     next_chapter_idx = current_chapter_idx + 1
-    if next_chapter_idx < len(chapters):
-        try:
-            next_chapter = chapters[next_chapter_idx]
-            next_image_data = generate_image(next_chapter)
-            if next_image_data and 'images' in next_image_data:
-                flask_session[f'chapter_image_{next_chapter_idx}'] = next_image_data.get('images', [None])[0]
-        except Exception as e:
-            logger.error(f"Failed to generate next image: {e}")
+    if next_chapter_idx < len(chapters) and not flask_session.get(f'chapter_image_{next_chapter_idx}'):
+        next_chapter = chapters[next_chapter_idx]
+        next_image_data = generate_image(next_chapter)
+        next_image = next_image_data.get('images', [None])[0]
+        flask_session[f'chapter_image_{next_chapter_idx}'] = next_image
 
     # Update current chapter index
     flask_session['current_chapter'] = current_chapter_idx + 1
