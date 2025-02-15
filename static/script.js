@@ -1,5 +1,20 @@
 let chapters = [];
 
+// Reset functionality
+document.getElementById('reset-button').addEventListener('click', () => {
+    document.getElementById('story-prompt').value = '';
+    document.getElementById('output').innerHTML = '';
+    document.getElementById('full-story').style.display = 'none';
+    document.getElementById('full-story').innerHTML = '';
+    chapters = [];
+});
+
+// Show full text functionality
+document.getElementById('show-full-text').addEventListener('change', (e) => {
+    const fullStoryDiv = document.getElementById('full-story');
+    fullStoryDiv.style.display = e.target.checked ? 'block' : 'none';
+});
+
 document.getElementById('create-story').addEventListener('click', async () => {
     const createButton = document.getElementById('create-story');
     const prompt = document.getElementById('story-prompt').value.trim();
