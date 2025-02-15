@@ -1,10 +1,6 @@
 let chapters = [];
 
-// Add event listener using the stored handler
-document.getElementById('create-story').addEventListener('click', window.createStoryHandler);
-
-// Store the handler function for reuse
-window.createStoryHandler = async () => {
+document.getElementById('create-story').addEventListener('click', async () => {
     const createButton = document.getElementById('create-story');
     const prompt = document.getElementById('story-prompt').value.trim();
     const chaptersInput = document.getElementById('chapters');

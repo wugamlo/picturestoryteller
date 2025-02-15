@@ -77,8 +77,9 @@
                     const newCreateButton = document.createElement('button');
                     newCreateButton.id = 'create-story';
                     newCreateButton.textContent = 'Create Story';
-                    newCreateButton.addEventListener('click', window.createStoryHandler);
                     inputSection.appendChild(newCreateButton);
+                    // Reattach event listener
+                    location.reload();
                 }
                 
                 // Clear story status
