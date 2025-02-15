@@ -52,10 +52,11 @@ async function fetchChapter() {
             nextButton.classList.add('loading');
         }
         const imageModel = document.getElementById('image-model').value;
+        const stylePreset = document.getElementById('image-styles').value; // Get selected style preset
         const response = await fetch('/continue-story', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_model: imageModel })
+            body: JSON.stringify({ image_model: imageModel, style_preset: stylePreset }) // Include style_preset
         });
         const data = await response.json();
 

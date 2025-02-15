@@ -27,114 +27,65 @@
         }
     </style>
 </head>
-    <body>
-        <div class="chat-container">
-            <h1>Picture Story Generator</h1>
-            <div class="input-section">
-                <div class="flex-container">
-                    <label for="story-prompt">Enter your story idea:</label>
-                    <button id="reset-button" class="reset-button">Reset</button>
-                </div>
-                <textarea id="story-prompt" placeholder="Your story idea..."></textarea>
-                <div class="flex-container">
-                    <label for="chapters"># Chapters:</label>
-                    <input type="number" id="chapters" min="1" placeholder="e.g., 3" value="3" size="2">
-                    <label>
-                        <input type="checkbox" id="show-full-text"> Show Full Text
-                    </label>
-                </div>
-                <div class="flex-container">
-                    <select id="text-model">
-                        {% for model in text_models %}
-                        <option value="{{ model }}">{{ model }}</option>
-                        {% endfor %}
-                    </select>
-                    <select id="image-model">
-                        {% for model in image_models %}
-                        <option value="{{ model }}">{{ model }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button id="create-story">Create Story</button>
-                <div id="story-status"></div>
+<body>
+    <div class="chat-container">
+        <h1>Wugamlo's Picture Story Generator</h1>
+        <div class="input-section">
+            <div class="flex-container">
+                <label for="story-prompt">Enter your story idea:</label>
+                <button id="reset-button" class="reset-button">Reset</button>
             </div>
-            <div class="output" id="output"></div>
-            <div class="full-story" id="full-story" style="display: none;"></div>
+            <textarea id="story-prompt" placeholder="Your story idea..."></textarea>
+            <div class="flex-container">
+                <label for="chapters"># Chapters:</label>
+                <input type="number" id="chapters" min="1" placeholder="e.g., 3" value="3" size="2">
+                <label>
+                    <input type="checkbox" id="show-full-text"> Show Full Text
+                </label>
+            </div>
+            <div class="flex-container">
+                <select id="text-model">
+                    {% for model in text_models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
+                <select id="image-model">
+                    {% for model in image_models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
+                <select id="image-styles">
+                    <option value="">Select Image Style</option>
+                </select>
+            </div>
+            <button id="create-story">Create Story</button>
+            <div id="story-status"></div>
         </div>
-        <script type="module" src="/static/script.js"></script>
-        <script>
-            document.getElementById('reset-button').addEventListener('click', function() {
-                document.getElementById('story-prompt').value = '';
-                document.getElementById('output').innerHTML = '';
-                document.getElementById('full-story').innerHTML = '';
-                document.getElementById('full-story').style.display = 'none';
-                document.getElementById('show-full-text').checked = false;
-                
-                // Restore create story button if it was removed
-                const createButton = document.getElementById('create-story');
-                if (!createButton) {
-                    const inputSection = document.querySelector('.input-section');
-                    const newCreateButton = document.createElement('button');
-                    newCreateButton.id = 'create-story';
-                    newCreateButton.textContent = 'Create Story';
-                    newCreateButton.addEventListener('click', async () => {
-                        const createButton = document.getElementById('create-story');
-                        const prompt = document.getElementById('story-prompt').value.trim();
-                        const chaptersInput = document.getElementById('chapters');
-                        const numChapters = parseInt(chaptersInput.value) || 5;
+        <div class="output" id="output"></div>
+        <div class="full-story" id="full-story" style="display: none;"></div>
+    </div>
+    <script type="module" src="/static/script.js"></script>
+    <script>
+        async function loadImageStyles() {
+            try {
+                const response = await fetch('/image-styles');
+                const styles = await response.json();
+                const stylesDropdown = document.getElementById('image-styles');
 
-                        if (!prompt || numChapters < 1) {
-                            alert('Please enter a valid story prompt and chapter count');
-                            return;
-                        }
-
-                        createButton.innerHTML = 'Creating Story... <div class="spinner"></div>';
-                        createButton.classList.add('loading');
-
-                        const textModel = document.getElementById('text-model').value;
-                        const imageModel = document.getElementById('image-model').value;
-
-                        const response = await fetch('/start-story', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt, num_chapters: numChapters, text_model: textModel, image_model: imageModel })
-                        });
-
-                        const data = await response.json();
-                        if (response.ok) {
-                            document.getElementById('create-story').remove();
-                            const storyStatusDiv = document.getElementById('story-status');
-                            storyStatusDiv.innerHTML = `<button id="start-reading">Start Reading</button>`;
-                            document.getElementById('full-story').innerText = data.full_story || "The story was not returned.";
-
-                            document.getElementById('start-reading').addEventListener('click', async () => {
-                                const startButton = document.getElementById('start-reading');
-                                startButton.innerHTML = 'Loading... <div class="spinner"></div>';
-                                startButton.classList.add('loading');
-                                await fetchChapter();
-                                startButton.remove();
-                            });
-                        } else {
-                            document.getElementById('output').innerHTML = `<div class="error">Error: ${data.error}</div>`;
-                        }
+                if (Array.isArray(styles)) {
+                    styles.forEach(style => {
+                        const option = document.createElement('option');
+                        option.value = style;
+                        option.textContent = style;
+                        stylesDropdown.appendChild(option);
                     });
-                    inputSection.appendChild(newCreateButton);
                 }
-                
-                // Clear story status
-                document.getElementById('story-status').innerHTML = '';
-            });
+            } catch (error) {
+                console.error('Failed to load image styles:', error);
+            }
+        }
 
-            document.getElementById('show-full-text').addEventListener('change', function() {
-                const fullTextResponse = document.getElementById('full-story'); // Reference the full story instead
-                if (this.checked) {
-                    const fullText = fullTextResponse.innerText;
-                    fullTextResponse.innerText = fullText || "No full text available."; // This line is optional now
-                    fullTextResponse.style.display = "block"; // Now it just modifies the full story directly
-                } else {
-                    fullTextResponse.style.display = "none"; // Hide full story if checkbox is unchecked
-                }
-            });
-        </script>
-    </body>
+        document.addEventListener('DOMContentLoaded', loadImageStyles);
+    </script>
+</body>
 </html>

@@ -52,6 +52,22 @@ def index():
 
     return render_template('index.html', text_models=text_models, image_models=image_models)
 
+@app.route('/image-styles', methods=['GET'])
+def get_image_styles():
+    try:
+        url = f"{VENICE_API_BASE}/image/styles"
+        headers = {
+            "Authorization": f"Bearer {VENICE_API_KEY}",
+        }
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        styles = data.get('data', [])
+        return jsonify(styles)
+    except Exception as e:
+        logger.error(f"Failed to fetch image styles: {e}")
+        return jsonify({"error": "Failed to fetch image styles"}), 500
+
 def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max_tokens=4000):
     try:
         response = requests.post(
@@ -63,7 +79,10 @@ def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max
             json={
                 "model": model_id,
                 "messages": messages,
-                "max_tokens": max_tokens
+                "max_tokens": max_tokens,
+                "venice_parameters": {
+                    "include_venice_system_prompt": False,
+                }
             },
             timeout=30
         )
@@ -77,23 +96,30 @@ def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max
         logger.error(f"Failed to generate response: {e}")
         return f"Error: {str(e)}"
 
-def generate_image(prompt, model_id="fluently-xl"):
+def generate_image(prompt, model_id="fluently-xl", style_preset=None):
     try:
+        payload = {
+            "model": model_id,
+            "prompt": prompt,
+            "width": 512,
+            "height": 288,
+            "steps": 30,
+            "hide_watermark": True,
+            "return_binary": True,
+            "seed": 123,
+            "safe_mode": False
+        }
+
+        if style_preset:
+            payload["style_preset"] = style_preset  # Include style_preset in the payload
+
         response = requests.post(
             f"{VENICE_API_BASE}/image/generate",
             headers={
                 "Authorization": f"Bearer {VENICE_API_KEY}",
                 "Content-Type": "application/json"
             },
-            json={
-                "model": model_id,
-                "prompt": prompt,
-                "width": 512,
-                "height": 288,
-                "steps": 30,
-                "hide_watermark": True,
-                "return_binary": True
-            },
+            json=payload,
             timeout=45
         )
         response.raise_for_status()
@@ -150,7 +176,8 @@ def start_story():
 def continue_story():
     data = request.get_json()
     image_model_id = data.get('image_model') if data else None
-    
+    style_preset = data.get('style_preset')  # Get style_preset from received data
+
     chapters = flask_session.get('chapters', [])
     current_chapter_idx = flask_session.get('current_chapter', 0)
 
@@ -160,7 +187,7 @@ def continue_story():
     chapter = chapters[current_chapter_idx]
     chapter_number = current_chapter_idx + 1
 
-    image_data = generate_image(chapter, model_id=image_model_id if image_model_id else "fluently-xl")
+    image_data = generate_image(chapter, model_id=image_model_id if image_model_id else "fluently-xl", style_preset=style_preset)
     image_url = image_data.get('images', [None])[0]
 
     flask_session['current_chapter'] = current_chapter_idx + 1
