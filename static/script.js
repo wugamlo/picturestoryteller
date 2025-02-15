@@ -113,35 +113,80 @@ document.getElementById('create-story').addEventListener('click', async () => {
     }
 });
 
-// Export story as PDF functionality
-document.getElementById('export-pdf').addEventListener('click', () => {
-    const fullStoryContent = document.getElementById('full-story').innerText;
-    const outputDiv = document.getElementById('output');
-    const pdf = new jsPDF();
+// Initially hide the export button
+document.getElementById('export-pdf').style.display = 'none';
 
-    if (!fullStoryContent) {
+// Export story as PDF functionality
+document.getElementById('export-pdf').addEventListener('click', async () => {
+    const outputDiv = document.getElementById('output');
+    const chapters = outputDiv.querySelectorAll('.chapter');
+    
+    if (chapters.length === 0) {
         alert("No story available to export.");
         return;
     }
 
-    pdf.text(fullStoryContent, 10, 10);
+    const pdf = new jsPDF();
+    let yOffset = 10;
+    const pageWidth = pdf.internal.pageSize.width;
+    const margin = 10;
+    const textWidth = pageWidth - (2 * margin);
 
-    // Add images to PDF
-    const images = outputDiv.querySelectorAll('img');
-    let yOffset = 10; // Initial vertical offset for images
+    for (const chapter of chapters) {
+        const title = chapter.querySelector('h3').textContent;
+        const content = chapter.querySelector('p').textContent;
+        const img = chapter.querySelector('img');
 
-    images.forEach((img) => {
-        // Get the image source and add it to the PDF
-        const imgSrc = img.getAttribute('src');
-        if (imgSrc) {
-            // Use 'addImage' in jsPDF to add images
-            pdf.addImage(imgSrc, 'PNG', 10, yOffset, 60, 60); // Adjust parameters as needed
-            yOffset += 65; // Increment offset for the next image
+        // Add chapter title
+        pdf.setFontSize(14);
+        pdf.text(title, margin, yOffset);
+        yOffset += 10;
+
+        // Add chapter content
+        pdf.setFontSize(12);
+        const splitText = pdf.splitTextToSize(content, textWidth);
+        pdf.text(splitText, margin, yOffset);
+        yOffset += (splitText.length * 7);
+
+        // Add image if present
+        if (img) {
+            const imgData = img.src;
+            try {
+                pdf.addImage(imgData, 'PNG', margin, yOffset, 180, 100);
+                yOffset += 110;
+            } catch (error) {
+                console.error('Error adding image:', error);
+            }
         }
-    });
+
+        // Add new page if not last chapter
+        if (chapter !== chapters[chapters.length - 1]) {
+            pdf.addPage();
+            yOffset = 10;
+        }
+    }
 
     pdf.save('story.pdf');
 });
+
+// Show export button when story is complete
+function createNextButton(isLast) {
+    const nextButton = document.createElement('button');
+    nextButton.id = 'next-chapter-btn';
+    nextButton.style.marginTop = '20px';
+    if (isLast) {
+        nextButton.textContent = 'The End';
+        nextButton.style.backgroundColor = '#888';
+        nextButton.style.cursor = 'default';
+        nextButton.disabled = true;
+        // Show export button when story is complete
+        document.getElementById('export-pdf').style.display = 'block';
+    } else {
+        nextButton.textContent = 'Next Chapter';
+        nextButton.onclick = fetchChapter;
+    }
+    return nextButton;
+}
 
 // Fetch Chapter function
 async function fetchChapter() {
