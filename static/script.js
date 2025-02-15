@@ -1,6 +1,7 @@
 let chapters = [];
 
 document.getElementById('create-story').addEventListener('click', async () => {
+    const createButton = document.getElementById('create-story');
     const prompt = document.getElementById('story-prompt').value.trim();
     const chaptersInput = document.getElementById('chapters');
     const numChapters = parseInt(chaptersInput.value) || 5;
@@ -9,6 +10,9 @@ document.getElementById('create-story').addEventListener('click', async () => {
         alert('Please enter a valid story prompt and chapter count');
         return;
     }
+
+    createButton.innerHTML = 'Creating Story... <div class="spinner"></div>';
+    createButton.classList.add('loading');
 
     const textModel = document.getElementById('text-model').value; // Get selected text model
     const imageModel = document.getElementById('image-model').value; // Get selected image model
@@ -39,6 +43,11 @@ document.getElementById('create-story').addEventListener('click', async () => {
 
 async function fetchChapter() {
     try {
+        const nextButton = document.getElementById('next-chapter-btn');
+        if (nextButton) {
+            nextButton.innerHTML = 'Loading... <div class="spinner"></div>';
+            nextButton.classList.add('loading');
+        }
         const imageModel = document.getElementById('image-model').value;
         const response = await fetch('/continue-story', { 
             method: 'POST',
@@ -73,6 +82,12 @@ async function fetchChapter() {
         errorDiv.className = 'error';
         errorDiv.textContent = `Failed to load chapter: ${error.message}`;
         document.getElementById('output').appendChild(errorDiv);
+    } finally {
+        const nextButton = document.getElementById('next-chapter-btn');
+        if (nextButton) {
+            nextButton.classList.remove('loading');
+            nextButton.innerHTML = 'Next Chapter';
+        }
     }
 }
 
