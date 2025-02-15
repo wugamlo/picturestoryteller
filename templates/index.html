@@ -6,44 +6,56 @@
     <title>Picture Story Generator</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-    <div class="chat-container">
-        <h1>Picture Story Generator</h1>
-        <div class="input-section">
-            <div class="flex-container">
-                <label for="story-prompt">Enter your story idea:</label>
-                <button id="reset-button" class="reset-button">Reset</button>
+    <body>
+        <div class="chat-container">
+            <h1>Picture Story Generator</h1>
+            <div class="input-section">
+                <div class="flex-container">
+                    <label for="story-prompt">Enter your story idea:</label>
+                    <button id="reset-button" class="reset-button">Reset</button>
+                </div>
+                <textarea id="story-prompt" placeholder="Your story idea..."></textarea>
+                <div class="flex-container">
+                    <label for="chapters"># Chapters:</label>
+                    <input type="number" id="chapters" min="1" placeholder="e.g., 3" value="3" size="2">
+                    <label>
+                        <input type="checkbox" id="show-full-text"> Show Full Text
+                    </label>
+                </div>
+                <div class="flex-container">
+                    <select id="text-model">
+                        {% for model in text_models %}
+                        <option value="{{ model }}">{{ model }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="image-model">
+                        {% for model in image_models %}
+                        <option value="{{ model }}">{{ model }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button id="create-story">Create Story</button>
+                <div id="story-status"></div>
             </div>
-            <textarea id="story-prompt" placeholder="Your story idea..."></textarea>
-            <div class="flex-container">
-                <label for="chapters"># Chapters:</label>
-                <input type="number" id="chapters" min="1" placeholder="e.g., 3" value="3" size="2">
-            </div>
-            <div class="flex-container">
-                <label for="text-model">Text Model:</label>
-                <select id="text-model">
-                    {% for model in text_models %}
-                    <option value="{{ model }}">{{ model }}</option>
-                    {% endfor %}
-                </select>
-                <label for="image-model">Image Model:</label>
-                <select id="image-model">
-                    {% for model in image_models %}
-                    <option value="{{ model }}">{{ model }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button id="create-story">Create Story</button>
-            <div id="story-status"></div>
+            <div class="output" id="output"></div>
+            <div class="full-story" id="full-story"></div>
         </div>
-        <div class="output" id="output"></div>
-        <div class="full-story" id="full-story" style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9; display: none;"></div>
-    </div>
-    <script type="module" src="/static/script.js"></script>
-    <script>
-        document.getElementById('reset-button').addEventListener('click', function() {
-            location.reload();
-        });
-    </script>
-</body>
+        <script type="module" src="/static/script.js"></script>
+        <script>
+            document.getElementById('reset-button').addEventListener('click', function() {
+                location.reload();
+            });
+
+            document.getElementById('show-full-text').addEventListener('change', function() {
+                const fullTextResponse = document.getElementById('full-story'); // Reference the full story instead
+                if (this.checked) {
+                    const fullText = fullTextResponse.innerText;
+                    fullTextResponse.innerText = fullText || "No full text available."; // This line is optional now
+                    fullTextResponse.style.display = "block"; // Now it just modifies the full story directly
+                } else {
+                    fullTextResponse.style.display = "none"; // Hide full story if checkbox is unchecked
+                }
+            });
+        </script>
+    </body>
 </html>

@@ -18,47 +18,38 @@ logger = logging.getLogger(__name__)
 VENICE_API_KEY = os.environ.get("VENICE_API_KEY", "your_venice_api_key_here")
 VENICE_API_BASE = "https://api.venice.ai/api/v1"
 
-def get_available_models(model_type='text'):
+def get_available_models(model_type):
     try:
         logger.debug(f"Fetching {model_type} models...")
-        response = requests.get(f"{VENICE_API_BASE}/{model_type}/models", headers={
+        response = requests.get(f"{VENICE_API_BASE}/models", headers={
             "Authorization": f"Bearer {VENICE_API_KEY}",
             "Content-Type": "application/json"
-        })
-        response.raise_for_status()
+        }, params={"type": model_type})  # Adding parameters to specify model type
+        response.raise_for_status()  # Raise an error for bad responses
         data = response.json()
-        logger.debug(f"API response for {model_type}: {data}")
-        
+        logger.debug(f"API response: {data}")
+
         models = []
-        if isinstance(data, dict) and isinstance(data.get("data"), list):
+        # Extract models based on the type provided
+        if isinstance(data, dict) and "data" in data:
             for model in data["data"]:
                 if isinstance(model, dict) and "id" in model:
                     models.append(model["id"])
-        
+
         logger.debug(f"Extracted {model_type} models: {models}")
-        # Add default model at the beginning
-        default_model = "llama-3.3-70b" if model_type == "text" else "fluently-xl"
-        if default_model not in models:
-            models.insert(0, default_model)
-        
-        return models if models else [default_model]
+
+        return models
     except Exception as e:
         logger.error(f"Failed to fetch {model_type} models: {e}")
-        return ["llama-3.3-70b"] if model_type == "text" else ["fluently-xl"]
+        return []
 
 @app.route('/')
 def index():
-    text_models = get_available_models('text')  # Fetch text models
+    text_models = get_available_models('')  # Fetch text models
     image_models = get_available_models('image')  # Fetch image models
     logger.debug(f"Text models: {text_models}")
     logger.debug(f"Image models: {image_models}")
-    
-    # Ensure we have at least default models
-    if not text_models:
-        text_models = ["llama-3.3-70b"]
-    if not image_models:
-        image_models = ["fluently-xl"]
-        
+
     return render_template('index.html', text_models=text_models, image_models=image_models)
 
 def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max_tokens=4000):
