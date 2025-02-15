@@ -127,9 +127,9 @@ document.getElementById('export-pdf').addEventListener('click', async () => {
     }
 
     const pdf = new jsPDF();
-    let yOffset = 10;
+    let yOffset = 25;
     const pageWidth = pdf.internal.pageSize.width;
-    const margin = 10;
+    const margin = 25;
     const textWidth = pageWidth - (2 * margin);
 
     for (const chapter of chapters) {
@@ -152,8 +152,8 @@ document.getElementById('export-pdf').addEventListener('click', async () => {
         if (img) {
             const imgData = img.src;
             try {
-                pdf.addImage(imgData, 'PNG', margin, yOffset, 180, 100);
-                yOffset += 110;
+                pdf.addImage(imgData, 'PNG', margin, yOffset, 150, 75);
+                yOffset += 85;
             } catch (error) {
                 console.error('Error adding image:', error);
             }
@@ -162,7 +162,7 @@ document.getElementById('export-pdf').addEventListener('click', async () => {
         // Add new page if not last chapter
         if (chapter !== chapters[chapters.length - 1]) {
             pdf.addPage();
-            yOffset = 10;
+            yOffset = 25;
         }
     }
 
