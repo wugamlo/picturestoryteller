@@ -17,11 +17,21 @@
             <textarea id="story-prompt" placeholder="Your story idea..."></textarea>
             <div class="flex-container">
                 <label for="chapters"># Chapters:</label>
-                <input type="number" id="chapters" min="1" placeholder="e.g., 3" value="3" size="2"> <!-- Added size attribute -->
-                <label>
-                    <input type="checkbox" id="show-full-story" />
-                    Full Story
-                </label>
+                <input type="number" id="chapters" min="1" placeholder="e.g., 3" value="3" size="2">
+            </div>
+            <div class="flex-container">
+                <label for="text-model">Text Model:</label>
+                <select id="text-model">
+                    {% for model in text_models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
+                <label for="image-model">Image Model:</label>
+                <select id="image-model">
+                    {% for model in image_models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <button id="create-story">Create Story</button>
             <div id="story-status"></div>
@@ -32,11 +42,7 @@
     <script type="module" src="/static/script.js"></script>
     <script>
         document.getElementById('reset-button').addEventListener('click', function() {
-            location.reload(); // Reload the page
-        });
-        document.getElementById('show-full-story').addEventListener('change', function() {
-            const fullStoryDiv = document.getElementById('full-story');
-            fullStoryDiv.style.display = this.checked ? 'block' : 'none';
+            location.reload();
         });
     </script>
 </body>

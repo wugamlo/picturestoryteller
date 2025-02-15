@@ -18,6 +18,25 @@ logger = logging.getLogger(__name__)
 VENICE_API_KEY = os.environ.get("VENICE_API_KEY", "your_venice_api_key_here")
 VENICE_API_BASE = "https://api.venice.ai/api/v1"
 
+def get_available_models(model_type='text'):
+    try:
+        response = requests.get(f"{VENICE_API_BASE}/{model_type}/models", headers={
+            "Authorization": f"Bearer {VENICE_API_KEY}",
+            "Content-Type": "application/json"
+        })
+        response.raise_for_status()
+        models = response.json().get("models", [])
+        return models
+    except Exception as e:
+        logger.error(f"Failed to fetch {model_type} models: {e}")
+        return []
+
+@app.route('/')
+def index():
+    text_models = get_available_models('text')  # Fetch text models
+    image_models = get_available_models('image')  # Fetch image models
+    return render_template('index.html', text_models=text_models, image_models=image_models)
+
 def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max_tokens=4000):
     try:
         response = requests.post(
@@ -55,7 +74,7 @@ def generate_image(prompt, model_id="fluently-xl"):
                 "model": model_id,
                 "prompt": prompt,
                 "width": 512,
-                "height": 512,
+                "height": 288,
                 "steps": 30,
                 "hide_watermark": True,
                 "return_binary": True
@@ -71,18 +90,17 @@ def generate_image(prompt, model_id="fluently-xl"):
     except Exception as e:
         return {"error": str(e)}
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 @app.route('/start-story', methods=['POST'])
 def start_story():
     data = request.get_json()
     prompt = data.get('prompt', '').strip()
     num_chapters = data.get('num_chapters', 1)
+    text_model_id = data.get('text_model')
+    image_model_id = data.get('image_model')
+
     if not prompt:
         return jsonify({"error": "No story prompt provided"}), 400
-    # Generate the full story with specified chapters
+
     initial_prompt = (
         f"Compose a story based on: '{prompt}' divided into exactly {num_chapters} chapters. "
         "Each chapter MUST start with 'CHAPTER X:' where X is the chapter number in Roman numerals, "
@@ -94,10 +112,9 @@ def start_story():
         messages=[{"role": "user", "content": initial_prompt}],
         max_tokens=max_tokens
     )
-    # Validate story generation
     if not full_story or "Error:" in full_story or "No content generated" in full_story:
         return jsonify({"error": "Failed to generate story"}), 500
-    # Split chapters using regex
+
     split_result = re.split(r'(CHAPTER\s+[IVXLCDM]+):\s*', full_story)
     chapters = []
     for i in range(1, len(split_result), 2):
@@ -105,20 +122,13 @@ def start_story():
             header = split_result[i]
             content = split_result[i + 1].strip()
             chapters.append(f"{header}: {content}")
-    chapters = chapters[:num_chapters]  # Truncate to requested chapters
-    # Ensure the correct number of chapters
+
+    chapters = chapters[:num_chapters]
     if len(chapters) < num_chapters:
         return jsonify({"error": "Generated story does not meet chapter count requirements"}), 400
-    # Store chapters in session
+
     flask_session['chapters'] = chapters
-    flask_session['current_chapter'] = 0  # Start with 0-based index
-
-    # Generate image for first chapter
-    if chapters:
-        image_data = generate_image(chapters[0])
-        image_url = image_data.get('images', [None])[0]
-        flask_session['chapter_image_0'] = image_url
-
+    flask_session['current_chapter'] = 0  
     return jsonify({"status": "Story generated successfully", "full_story": full_story})
 
 @app.route('/continue-story', methods=['POST'])
@@ -129,31 +139,18 @@ def continue_story():
     if current_chapter_idx >= len(chapters) or not chapters:
         return jsonify({"error": "No more chapters available"}), 400
 
-    # Get the current chapter
     chapter = chapters[current_chapter_idx]
     chapter_number = current_chapter_idx + 1
 
-    # Get the current chapter's image from session or generate it
-    current_image = flask_session.get(f'chapter_image_{current_chapter_idx}')
-    if not current_image:
-        image_data = generate_image(chapter)
-        current_image = image_data.get('images', [None])[0]
+    image_data = generate_image(chapter)
+    image_url = image_data.get('images', [None])[0]
 
-    # Generate image for next chapter if it exists
-    next_chapter_idx = current_chapter_idx + 1
-    if next_chapter_idx < len(chapters) and not flask_session.get(f'chapter_image_{next_chapter_idx}'):
-        next_chapter = chapters[next_chapter_idx]
-        next_image_data = generate_image(next_chapter)
-        next_image = next_image_data.get('images', [None])[0]
-        flask_session[f'chapter_image_{next_chapter_idx}'] = next_image
-
-    # Update current chapter index
     flask_session['current_chapter'] = current_chapter_idx + 1
 
     return jsonify({
         "chapter": chapter_number,
         "content": chapter,
-        "image": current_image,
+        "image": image_url,
         "is_last": current_chapter_idx + 1 >= len(chapters)
     })
 

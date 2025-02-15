@@ -1,4 +1,3 @@
-let currentChapter = 0;
 let chapters = [];
 
 document.getElementById('create-story').addEventListener('click', async () => {
@@ -11,29 +10,26 @@ document.getElementById('create-story').addEventListener('click', async () => {
         return;
     }
 
+    const textModel = document.getElementById('text-model').value; // Get selected text model
+    const imageModel = document.getElementById('image-model').value; // Get selected image model
+
     const response = await fetch('/start-story', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, num_chapters: numChapters })
+        body: JSON.stringify({ prompt, num_chapters: numChapters, text_model: textModel, image_model: imageModel })
     });
 
     const data = await response.json();
     if (response.ok) {
-        // Remove the Create Story button
         document.getElementById('create-story').remove();
-
-        // Show Start Reading button
         const storyStatusDiv = document.getElementById('story-status');
         storyStatusDiv.innerHTML = `
             <button id="start-reading">Start Reading</button>
         `;
-
-        // Display the entire story
         document.getElementById('full-story').innerText = data.full_story || "The story was not returned.";
 
         document.getElementById('start-reading').addEventListener('click', () => {
             fetchChapter();
-            // Remove the Start Reading button after click
             document.getElementById('start-reading').remove();
         });
     } else {
@@ -47,12 +43,6 @@ async function fetchChapter() {
         const data = await response.json();
 
         if (response.ok) {
-            // Remove existing Next Chapter button if present
-            const existingBtn = document.getElementById('next-chapter-btn');
-            if (existingBtn) {
-                existingBtn.remove();
-            }
-
             const chapterParts = data.content.split(':');
             const header = chapterParts[0];
             const content = chapterParts.slice(1).join(':').trim();
@@ -66,26 +56,7 @@ async function fetchChapter() {
             `;
             document.getElementById('output').appendChild(chapterDiv);
 
-            // Scroll to the bottom of the output area
-            const outputDiv = document.getElementById('output');
-            outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to the end
-
-            // Create the Next Chapter button at the same position
-            if (!data.is_last) {
-                const nextButton = document.createElement('button');
-                nextButton.id = 'next-chapter-btn';
-                nextButton.style.marginTop = '20px';
-                nextButton.textContent = 'Next Chapter';
-                nextButton.onclick = fetchChapter;
-
-                // Position it in the same place as the Start Reading button
-                document.getElementById('story-status').appendChild(nextButton);
-            } else {
-                const endMessage = document.createElement('div');
-                endMessage.className = 'end-message';
-                endMessage.textContent = 'The End.';
-                document.getElementById('output').appendChild(endMessage);
-            }
+            document.getElementById('story-status').appendChild(createNextButton(data.is_last));
         } else {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error';
@@ -98,4 +69,13 @@ async function fetchChapter() {
         errorDiv.textContent = `Failed to load chapter: ${error.message}`;
         document.getElementById('output').appendChild(errorDiv);
     }
+}
+
+function createNextButton(isLast) {
+    const nextButton = document.createElement('button');
+    nextButton.id = 'next-chapter-btn';
+    nextButton.style.marginTop = '20px';
+    nextButton.textContent = isLast ? 'The End.' : 'Next Chapter';
+    nextButton.onclick = isLast ? null : fetchChapter;
+    return nextButton;
 }
