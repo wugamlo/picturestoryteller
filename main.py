@@ -20,22 +20,39 @@ VENICE_API_BASE = "https://api.venice.ai/api/v1"
 
 def get_available_models(model_type='text'):
     try:
+        logger.debug(f"Fetching {model_type} models...")
         response = requests.get(f"{VENICE_API_BASE}/{model_type}/models", headers={
             "Authorization": f"Bearer {VENICE_API_KEY}",
             "Content-Type": "application/json"
         })
         response.raise_for_status()
         data = response.json()
-        models = [model["id"] for model in data.get("data", [])]
-        return models if models else ["llama-3.3-70b" if model_type == "text" else "fluently-xl"]
+        logger.debug(f"API response for {model_type}: {data}")
+        
+        if not data.get("data"):
+            logger.warning(f"No {model_type} models returned from API")
+            return ["llama-3.3-70b"] if model_type == "text" else ["fluently-xl"]
+            
+        models = [model["id"] for model in data["data"]]
+        logger.debug(f"Extracted {model_type} models: {models}")
+        return models
     except Exception as e:
         logger.error(f"Failed to fetch {model_type} models: {e}")
-        return []
+        return ["llama-3.3-70b"] if model_type == "text" else ["fluently-xl"]
 
 @app.route('/')
 def index():
     text_models = get_available_models('text')  # Fetch text models
     image_models = get_available_models('image')  # Fetch image models
+    logger.debug(f"Text models: {text_models}")
+    logger.debug(f"Image models: {image_models}")
+    
+    # Ensure we have at least default models
+    if not text_models:
+        text_models = ["llama-3.3-70b"]
+    if not image_models:
+        image_models = ["fluently-xl"]
+        
     return render_template('index.html', text_models=text_models, image_models=image_models)
 
 def generate_chat_response_non_streaming(messages, model_id="llama-3.3-70b", max_tokens=4000):
