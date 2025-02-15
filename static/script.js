@@ -243,18 +243,3 @@ async function fetchChapter() {
     }
 }
 
-function createNextButton(isLast) {
-    const nextButton = document.createElement('button');
-    nextButton.id = 'next-chapter-btn';
-    nextButton.style.marginTop = '20px';
-    if (isLast) {
-        nextButton.textContent = 'The End';
-        nextButton.style.backgroundColor = '#888';
-        nextButton.style.cursor = 'default';
-        nextButton.disabled = true;
-    } else {
-        nextButton.textContent = 'Next Chapter';
-        nextButton.onclick = fetchChapter;
-    }
-    return nextButton;
-}
