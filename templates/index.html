@@ -64,7 +64,26 @@
         <script type="module" src="/static/script.js"></script>
         <script>
             document.getElementById('reset-button').addEventListener('click', function() {
-                location.reload();
+                document.getElementById('story-prompt').value = '';
+                document.getElementById('output').innerHTML = '';
+                document.getElementById('full-story').innerHTML = '';
+                document.getElementById('full-story').style.display = 'none';
+                document.getElementById('show-full-text').checked = false;
+                
+                // Restore create story button if it was removed
+                const createButton = document.getElementById('create-story');
+                if (!createButton) {
+                    const inputSection = document.querySelector('.input-section');
+                    const newCreateButton = document.createElement('button');
+                    newCreateButton.id = 'create-story';
+                    newCreateButton.textContent = 'Create Story';
+                    inputSection.appendChild(newCreateButton);
+                    // Reattach event listener
+                    location.reload();
+                }
+                
+                // Clear story status
+                document.getElementById('story-status').innerHTML = '';
             });
 
             document.getElementById('show-full-text').addEventListener('change', function() {
