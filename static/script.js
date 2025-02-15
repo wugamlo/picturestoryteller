@@ -70,7 +70,11 @@ async function fetchChapter() {
             `;
             document.getElementById('output').appendChild(chapterDiv);
 
-            document.getElementById('story-status').appendChild(createNextButton(data.is_last));
+            const storyStatus = document.getElementById('story-status');
+            // Clear any existing buttons
+            storyStatus.innerHTML = '';
+            // Add new button
+            storyStatus.appendChild(createNextButton(data.is_last));
         } else {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error';
