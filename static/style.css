@@ -42,13 +42,17 @@ button {
   outline: none;
   border: none;
   cursor: pointer;
-  padding: 8px 16px; /* Adjusted padding for smaller button */
-  font-size: 0.9rem;  /* Smaller font size for button text */
+  padding: 8px 16px;
+  font-size: 0.9rem;
   background-color: #4CAF50;
   color: white;
   border-radius: 5px;
   margin-top: 10px;
   transition: background-color 0.3s;
+  min-width: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 button:hover {
