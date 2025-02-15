@@ -77,9 +77,48 @@
                     const newCreateButton = document.createElement('button');
                     newCreateButton.id = 'create-story';
                     newCreateButton.textContent = 'Create Story';
+                    newCreateButton.addEventListener('click', async () => {
+                        const createButton = document.getElementById('create-story');
+                        const prompt = document.getElementById('story-prompt').value.trim();
+                        const chaptersInput = document.getElementById('chapters');
+                        const numChapters = parseInt(chaptersInput.value) || 5;
+
+                        if (!prompt || numChapters < 1) {
+                            alert('Please enter a valid story prompt and chapter count');
+                            return;
+                        }
+
+                        createButton.innerHTML = 'Creating Story... <div class="spinner"></div>';
+                        createButton.classList.add('loading');
+
+                        const textModel = document.getElementById('text-model').value;
+                        const imageModel = document.getElementById('image-model').value;
+
+                        const response = await fetch('/start-story', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt, num_chapters: numChapters, text_model: textModel, image_model: imageModel })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            document.getElementById('create-story').remove();
+                            const storyStatusDiv = document.getElementById('story-status');
+                            storyStatusDiv.innerHTML = `<button id="start-reading">Start Reading</button>`;
+                            document.getElementById('full-story').innerText = data.full_story || "The story was not returned.";
+
+                            document.getElementById('start-reading').addEventListener('click', async () => {
+                                const startButton = document.getElementById('start-reading');
+                                startButton.innerHTML = 'Loading... <div class="spinner"></div>';
+                                startButton.classList.add('loading');
+                                await fetchChapter();
+                                startButton.remove();
+                            });
+                        } else {
+                            document.getElementById('output').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                        }
+                    });
                     inputSection.appendChild(newCreateButton);
-                    // Reattach event listener
-                    location.reload();
                 }
                 
                 // Clear story status
