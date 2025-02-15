@@ -39,7 +39,12 @@ document.getElementById('create-story').addEventListener('click', async () => {
 
 async function fetchChapter() {
     try {
-        const response = await fetch('/continue-story', { method: 'POST' });
+        const imageModel = document.getElementById('image-model').value;
+        const response = await fetch('/continue-story', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_model: imageModel })
+        });
         const data = await response.json();
 
         if (response.ok) {

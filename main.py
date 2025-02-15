@@ -148,6 +148,9 @@ def start_story():
 
 @app.route('/continue-story', methods=['POST'])
 def continue_story():
+    data = request.get_json()
+    image_model_id = data.get('image_model') if data else None
+    
     chapters = flask_session.get('chapters', [])
     current_chapter_idx = flask_session.get('current_chapter', 0)
 
@@ -157,7 +160,7 @@ def continue_story():
     chapter = chapters[current_chapter_idx]
     chapter_number = current_chapter_idx + 1
 
-    image_data = generate_image(chapter)
+    image_data = generate_image(chapter, model_id=image_model_id if image_model_id else "fluently-xl")
     image_url = image_data.get('images', [None])[0]
 
     flask_session['current_chapter'] = current_chapter_idx + 1
