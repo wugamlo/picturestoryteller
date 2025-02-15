@@ -25,7 +25,8 @@ def get_available_models(model_type='text'):
             "Content-Type": "application/json"
         })
         response.raise_for_status()
-        models = response.json().get("models", [])
+        data = response.json()
+        models = [model["id"] for model in data.get("data", []) if model.get("type") == model_type]
         return models
     except Exception as e:
         logger.error(f"Failed to fetch {model_type} models: {e}")
