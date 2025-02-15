@@ -29,13 +29,20 @@ def get_available_models(model_type='text'):
         data = response.json()
         logger.debug(f"API response for {model_type}: {data}")
         
-        if not data.get("data"):
-            logger.warning(f"No {model_type} models returned from API")
-            return ["llama-3.3-70b"] if model_type == "text" else ["fluently-xl"]
-            
-        models = [model["id"] for model in data["data"]]
+        models = []
+        if isinstance(data, dict) and isinstance(data.get("data"), list):
+            models = [
+                model["id"] for model in data["data"] 
+                if isinstance(model, dict) and model.get("type") == model_type
+            ]
+        
         logger.debug(f"Extracted {model_type} models: {models}")
-        return models
+        # Add default model at the beginning if not present
+        default_model = "llama-3.3-70b" if model_type == "text" else "fluently-xl"
+        if default_model not in models:
+            models.insert(0, default_model)
+        
+        return models if models else [default_model]
     except Exception as e:
         logger.error(f"Failed to fetch {model_type} models: {e}")
         return ["llama-3.3-70b"] if model_type == "text" else ["fluently-xl"]
