@@ -8,7 +8,7 @@ document.getElementById('reset-button').addEventListener('click', () => {
     document.getElementById('full-story').innerHTML = '';
     document.getElementById('story-status').innerHTML = '';
     chapters = [];
-    
+
     // Restore create story button
     const storyStatusDiv = document.getElementById('story-status');
     if (!document.getElementById('create-story')) {
@@ -68,6 +68,7 @@ document.getElementById('show-full-text').addEventListener('change', (e) => {
     fullStoryDiv.style.display = e.target.checked ? 'block' : 'none';
 });
 
+// Create story logic
 document.getElementById('create-story').addEventListener('click', async () => {
     const createButton = document.getElementById('create-story');
     const prompt = document.getElementById('story-prompt').value.trim();
@@ -82,8 +83,8 @@ document.getElementById('create-story').addEventListener('click', async () => {
     createButton.innerHTML = 'Creating Story... <div class="spinner"></div>';
     createButton.classList.add('loading');
 
-    const textModel = document.getElementById('text-model').value; // Get selected text model
-    const imageModel = document.getElementById('image-model').value; // Get selected image model
+    const textModel = document.getElementById('text-model').value;
+    const imageModel = document.getElementById('image-model').value;
 
     const response = await fetch('/start-story', {
         method: 'POST',
@@ -112,6 +113,37 @@ document.getElementById('create-story').addEventListener('click', async () => {
     }
 });
 
+// Export story as PDF functionality
+document.getElementById('export-pdf').addEventListener('click', () => {
+    const fullStoryContent = document.getElementById('full-story').innerText;
+    const outputDiv = document.getElementById('output');
+    const pdf = new jsPDF();
+
+    if (!fullStoryContent) {
+        alert("No story available to export.");
+        return;
+    }
+
+    pdf.text(fullStoryContent, 10, 10);
+
+    // Add images to PDF
+    const images = outputDiv.querySelectorAll('img');
+    let yOffset = 10; // Initial vertical offset for images
+
+    images.forEach((img) => {
+        // Get the image source and add it to the PDF
+        const imgSrc = img.getAttribute('src');
+        if (imgSrc) {
+            // Use 'addImage' in jsPDF to add images
+            pdf.addImage(imgSrc, 'PNG', 10, yOffset, 60, 60); // Adjust parameters as needed
+            yOffset += 65; // Increment offset for the next image
+        }
+    });
+
+    pdf.save('story.pdf');
+});
+
+// Fetch Chapter function
 async function fetchChapter() {
     try {
         const nextButton = document.getElementById('next-chapter-btn');
@@ -120,11 +152,11 @@ async function fetchChapter() {
             nextButton.classList.add('loading');
         }
         const imageModel = document.getElementById('image-model').value;
-        const stylePreset = document.getElementById('image-styles').value; // Get selected style preset
+        const stylePreset = document.getElementById('image-styles').value;
         const response = await fetch('/continue-story', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_model: imageModel, style_preset: stylePreset }) // Include style_preset
+            body: JSON.stringify({ image_model: imageModel, style_preset: stylePreset })
         });
         const data = await response.json();
 
@@ -143,9 +175,7 @@ async function fetchChapter() {
             document.getElementById('output').appendChild(chapterDiv);
 
             const storyStatus = document.getElementById('story-status');
-            // Clear any existing buttons
             storyStatus.innerHTML = '';
-            // Add new button
             storyStatus.appendChild(createNextButton(data.is_last));
         } else {
             const errorDiv = document.createElement('div');
@@ -162,7 +192,6 @@ async function fetchChapter() {
         const nextButton = document.getElementById('next-chapter-btn');
         if (nextButton) {
             nextButton.classList.remove('loading');
-            // Get the button text from its current state
             const isLastChapter = nextButton.disabled;
             nextButton.innerHTML = isLastChapter ? 'The End' : 'Next Chapter';
         }
