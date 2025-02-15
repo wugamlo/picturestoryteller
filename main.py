@@ -31,13 +31,12 @@ def get_available_models(model_type='text'):
         
         models = []
         if isinstance(data, dict) and isinstance(data.get("data"), list):
-            models = [
-                model["id"] for model in data["data"] 
-                if isinstance(model, dict) and model.get("type") == model_type
-            ]
+            for model in data["data"]:
+                if isinstance(model, dict) and "id" in model:
+                    models.append(model["id"])
         
         logger.debug(f"Extracted {model_type} models: {models}")
-        # Add default model at the beginning if not present
+        # Add default model at the beginning
         default_model = "llama-3.3-70b" if model_type == "text" else "fluently-xl"
         if default_model not in models:
             models.insert(0, default_model)
