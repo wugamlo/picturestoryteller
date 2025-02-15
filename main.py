@@ -26,8 +26,8 @@ def get_available_models(model_type='text'):
         })
         response.raise_for_status()
         data = response.json()
-        models = [model["id"] for model in data.get("data", []) if model.get("type") == model_type]
-        return models
+        models = [model["id"] for model in data.get("data", [])]
+        return models if models else ["llama-3.3-70b" if model_type == "text" else "fluently-xl"]
     except Exception as e:
         logger.error(f"Failed to fetch {model_type} models: {e}")
         return []
