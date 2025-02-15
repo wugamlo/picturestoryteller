@@ -7,6 +7,7 @@ document.getElementById('reset-button').addEventListener('click', () => {
     document.getElementById('full-story').style.display = 'none';
     document.getElementById('full-story').innerHTML = '';
     document.getElementById('story-status').innerHTML = '';
+    document.getElementById('export-pdf').style.display = 'none';
     chapters = [];
 
     // Restore create story button
