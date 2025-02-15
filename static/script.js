@@ -32,9 +32,12 @@ document.getElementById('create-story').addEventListener('click', async () => {
         `;
         document.getElementById('full-story').innerText = data.full_story || "The story was not returned.";
 
-        document.getElementById('start-reading').addEventListener('click', () => {
-            fetchChapter();
-            document.getElementById('start-reading').remove();
+        document.getElementById('start-reading').addEventListener('click', async () => {
+            const startButton = document.getElementById('start-reading');
+            startButton.innerHTML = 'Loading... <div class="spinner"></div>';
+            startButton.classList.add('loading');
+            await fetchChapter();
+            startButton.remove();
         });
     } else {
         document.getElementById('output').innerHTML = `<div class="error">Error: ${data.error}</div>`;
@@ -90,7 +93,7 @@ async function fetchChapter() {
         const nextButton = document.getElementById('next-chapter-btn');
         if (nextButton) {
             nextButton.classList.remove('loading');
-            nextButton.innerHTML = 'Next Chapter';
+            nextButton.innerHTML = isLast ? 'The End' : 'Next Chapter';
         }
     }
 }
