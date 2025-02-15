@@ -93,7 +93,9 @@ async function fetchChapter() {
         const nextButton = document.getElementById('next-chapter-btn');
         if (nextButton) {
             nextButton.classList.remove('loading');
-            nextButton.innerHTML = isLast ? 'The End' : 'Next Chapter';
+            // Get the button text from its current state
+            const isLastChapter = nextButton.disabled;
+            nextButton.innerHTML = isLastChapter ? 'The End' : 'Next Chapter';
         }
     }
 }
