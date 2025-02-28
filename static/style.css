@@ -196,3 +196,7 @@ h1 {
 .image-style-desc {
   text-align: right; /* Right align for Image Style */
 }
+
+select {
+    min-width: 60px; /* Adjust the min-width to a smaller value, e.g., 100px */
+}

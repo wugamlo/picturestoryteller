@@ -139,12 +139,12 @@ document.getElementById('export-pdf').addEventListener('click', async () => {
         const img = chapter.querySelector('img');
 
         // Add chapter title
-        pdf.setFontSize(14);
+        pdf.setFontSize(16);
         pdf.text(title, margin, yOffset);
         yOffset += 10;
 
         // Add chapter content
-        pdf.setFontSize(12);
+        pdf.setFontSize(14);
         const splitText = pdf.splitTextToSize(content, textWidth);
         pdf.text(splitText, margin, yOffset);
         yOffset += (splitText.length * 7);

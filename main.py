@@ -187,7 +187,11 @@ def continue_story():
     chapter = chapters[current_chapter_idx]
     chapter_number = current_chapter_idx + 1
 
-    image_data = generate_image(chapter, model_id=image_model_id if image_model_id else "fluently-xl", style_preset=style_preset)
+    # Enhance the image prompt with chapter details
+    chapter_details = f"Create an image that represents: {chapter}. Consider the mood of the story focus on the key elements mentioned."
+
+    # Use "flux-dev-uncensored" as the default model if none is specified
+    image_data = generate_image(chapter_details, model_id=image_model_id if image_model_id else "flux-dev-uncensored", style_preset=style_preset)
     image_url = image_data.get('images', [None])[0]
 
     flask_session['current_chapter'] = current_chapter_idx + 1

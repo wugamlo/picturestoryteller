@@ -71,7 +71,7 @@
                 </select>
                 <select id="image-model">
                     {% for model in image_models %}
-                    <option value="{{ model }}">{{ model }}</option>
+                        <option value="{{ model }}" {% if model == 'flux-dev-uncensored' %}selected{% endif %}>{{ model }}</option>
                     {% endfor %}
                 </select>
                 <select id="image-styles">
