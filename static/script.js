@@ -52,6 +52,7 @@ document.getElementById('reset-button').addEventListener('click', () => {
                     const startButton = document.getElementById('start-reading');
                     startButton.innerHTML = 'Loading... <div class="spinner"></div>';
                     startButton.classList.add('loading');
+                    document.getElementById('output').innerHTML = ''; // Clear any previous output
                     await fetchChapter();
                     startButton.remove();
                 });
@@ -170,33 +171,32 @@ document.getElementById('export-pdf').addEventListener('click', async () => {
     pdf.save('story.pdf');
 });
 
-// Show export button when story is complete
-function createNextButton(isLast) {
-    const nextButton = document.createElement('button');
-    nextButton.id = 'next-chapter-btn';
-    nextButton.style.marginTop = '20px';
-    if (isLast) {
-        nextButton.textContent = 'The End';
-        nextButton.style.backgroundColor = '#888';
-        nextButton.style.cursor = 'default';
-        nextButton.disabled = true;
-        // Show export button when story is complete
-        document.getElementById('export-pdf').style.display = 'block';
-    } else {
-        nextButton.textContent = 'Next Chapter';
-        nextButton.onclick = fetchChapter;
-    }
-    return nextButton;
-}
+// This function has been removed as it's no longer needed with the automatic chapter progression
 
 // Fetch Chapter function
 async function fetchChapter() {
     try {
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'loading-indicator';
+        loadingIndicator.innerHTML = 'Loading next chapter... <div class="spinner"></div>';
+        loadingIndicator.style.textAlign = 'center';
+        loadingIndicator.style.margin = '20px 0';
+        
+        // Remove existing loading indicator if present
+        const existingIndicator = document.getElementById('loading-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        // Remove next chapter button if present
         const nextButton = document.getElementById('next-chapter-btn');
         if (nextButton) {
-            nextButton.innerHTML = 'Loading... <div class="spinner"></div>';
-            nextButton.classList.add('loading');
+            nextButton.remove();
         }
+        
+        // Add loading indicator to the output
+        document.getElementById('output').appendChild(loadingIndicator);
+        
         const imageModel = document.getElementById('image-model').value;
         const stylePreset = document.getElementById('image-styles').value;
         const response = await fetch('/continue-story', { 
@@ -207,6 +207,9 @@ async function fetchChapter() {
         const data = await response.json();
 
         if (response.ok) {
+            // Remove loading indicator
+            loadingIndicator.remove();
+            
             const chapterParts = data.content.split(':');
             const header = chapterParts[0];
             const content = chapterParts.slice(1).join(':').trim();
@@ -220,27 +223,48 @@ async function fetchChapter() {
             `;
             document.getElementById('output').appendChild(chapterDiv);
 
-            const storyStatus = document.getElementById('story-status');
-            storyStatus.innerHTML = '';
-            storyStatus.appendChild(createNextButton(data.is_last));
+            // Auto-scroll to the new chapter
+            chapterDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // If this is the last chapter, show "The End" and export button
+            if (data.is_last) {
+                const endMessage = document.createElement('div');
+                endMessage.className = 'end-message';
+                endMessage.textContent = 'The End';
+                endMessage.style.textAlign = 'center';
+                endMessage.style.fontSize = '1.5em';
+                endMessage.style.margin = '20px 0';
+                document.getElementById('output').appendChild(endMessage);
+                
+                // Show export button
+                document.getElementById('export-pdf').style.display = 'block';
+            } else {
+                // If not the last chapter, automatically fetch the next chapter after a delay
+                // Adding a short delay to give the user time to read the current chapter
+                setTimeout(() => {
+                    fetchChapter();
+                }, 1500); // 1.5 second delay before fetching next chapter
+            }
         } else {
+            // Remove loading indicator
+            loadingIndicator.remove();
+            
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error';
             errorDiv.textContent = `Error: ${data.error}`;
             document.getElementById('output').appendChild(errorDiv);
         }
     } catch (error) {
+        // Remove loading indicator if it exists
+        const loadingIndicator = document.getElementById('loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+        
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error';
         errorDiv.textContent = `Failed to load chapter: ${error.message}`;
         document.getElementById('output').appendChild(errorDiv);
-    } finally {
-        const nextButton = document.getElementById('next-chapter-btn');
-        if (nextButton) {
-            nextButton.classList.remove('loading');
-            const isLastChapter = nextButton.disabled;
-            nextButton.innerHTML = isLastChapter ? 'The End' : 'Next Chapter';
-        }
     }
 }
 
